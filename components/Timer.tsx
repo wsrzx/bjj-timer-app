@@ -50,6 +50,14 @@ const Timer: React.FC = () => {
     setIsActive(true);
   };
 
+  const addMinute = () => {
+    if (isActive) {
+      setTimeLeft(time => time + 60);
+    } else {
+      startTimer(1);
+    }
+  };
+
   const stopTimer = () => {
     setIsActive(false);
     setTimeLeft(0);
@@ -96,10 +104,10 @@ const Timer: React.FC = () => {
             <Text style={styles.buttonText}>7</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.button, timeLeft === 10 * 60 && isActive && styles.activeButton]} 
-            onPress={() => startTimer(10)}
+            style={[styles.button, styles.addButton]} 
+            onPress={addMinute}
           >
-            <Text style={styles.buttonText}>10</Text>
+            <Text style={styles.buttonText}>+1</Text>
           </TouchableOpacity>
         </View>
         {isActive && (
@@ -174,6 +182,9 @@ const styles = StyleSheet.create({
   stopButtonText: {
     color: '#fff',
     fontSize: 24,
+  },
+  addButton: {
+    backgroundColor: '#3498db',
   },
 });
 
