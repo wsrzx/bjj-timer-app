@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
 import { Audio } from 'expo-av';
 
 const Timer: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [dimensions, setDimensions] = useState(Dimensions.get('window'));
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -29,6 +30,14 @@ const Timer: React.FC = () => {
         }
       : undefined;
   }, [sound]);
+
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setDimensions(window);
+    });
+
+    return () => subscription?.remove();
+  }, []);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -54,28 +63,51 @@ const Timer: React.FC = () => {
     await sound.playAsync();
   };
 
+  const isLandscape = dimensions.width > dimensions.height;
+  const timerSize = isLandscape ? 
+    Math.min(dimensions.width, dimensions.height) * 0.5 : 
+    Math.min(dimensions.width, dimensions.height) * 0.35;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => startTimer(5)}>
-          <Text style={styles.buttonText}>5 min</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => startTimer(6)}>
-          <Text style={styles.buttonText}>6 min</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => startTimer(7)}>
-          <Text style={styles.buttonText}>7 min</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => startTimer(10)}>
-          <Text style={styles.buttonText}>10 min</Text>
-        </TouchableOpacity>
+      <View style={styles.timerContainer}>
+        <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.timerText, { fontSize: timerSize }]}>
+          {formatTime(timeLeft)}
+        </Text>
       </View>
-      {isActive && (
-        <TouchableOpacity style={styles.stopButton} onPress={stopTimer}>
-          <Text style={styles.buttonText}>Parar</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.controlsContainer}>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={[styles.button, timeLeft === 5 * 60 && isActive && styles.activeButton]} 
+            onPress={() => startTimer(5)}
+          >
+            <Text style={styles.buttonText}>5</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.button, timeLeft === 6 * 60 && isActive && styles.activeButton]} 
+            onPress={() => startTimer(6)}
+          >
+            <Text style={styles.buttonText}>6</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.button, timeLeft === 7 * 60 && isActive && styles.activeButton]} 
+            onPress={() => startTimer(7)}
+          >
+            <Text style={styles.buttonText}>7</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.button, timeLeft === 10 * 60 && isActive && styles.activeButton]} 
+            onPress={() => startTimer(10)}
+          >
+            <Text style={styles.buttonText}>10</Text>
+          </TouchableOpacity>
+        </View>
+        {isActive && (
+          <TouchableOpacity style={styles.stopButton} onPress={stopTimer}>
+            <Text style={[styles.buttonText, styles.stopButtonText]}>⏹️</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 };
@@ -85,34 +117,63 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 20,
+    width: '100%',
+  },
+  timerContainer: {
+    flex: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 10,
   },
   timerText: {
-    fontSize: 80,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 40,
+    width: '100%',
+    textAlign: 'center',
+  },
+  controlsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 15,
+    paddingBottom: 20,
+    width: '100%',
   },
   buttonContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
   },
   button: {
     backgroundColor: '#fff',
-    padding: 15,
-    margin: 10,
-    borderRadius: 5,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activeButton: {
+    backgroundColor: '#4CAF50',
   },
   buttonText: {
     color: '#000',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   stopButton: {
     backgroundColor: '#ff0000',
-    padding: 15,
-    margin: 10,
-    borderRadius: 5,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stopButtonText: {
+    color: '#fff',
+    fontSize: 24,
   },
 });
 
