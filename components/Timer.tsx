@@ -17,19 +17,12 @@ const Timer: React.FC = () => {
       }, 1000);
     } else if (isActive && timeLeft === 0) {
       setIsActive(false);
+      console.log('Timer finished, playing sound...');
       playBuzzer();
     }
 
     return () => clearInterval(interval);
   }, [isActive, timeLeft]);
-
-  useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -38,6 +31,23 @@ const Timer: React.FC = () => {
 
     return () => subscription?.remove();
   }, []);
+
+  const loadSound = async () => {
+    try {
+      console.log('Loading sound...');
+      const { sound } = await Audio.Sound.createAsync(
+        require('../assets/buzzer.mp3'),
+        { shouldPlay: false },
+        (status) => {
+          console.log('Sound status:', status);
+        }
+      );
+      console.log('Sound loaded successfully');
+      setSound(sound);
+    } catch (error) {
+      console.error('Error loading sound:', error);
+    }
+  };
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -64,17 +74,38 @@ const Timer: React.FC = () => {
   };
 
   const playBuzzer = async () => {
-    const { sound } = await Audio.Sound.createAsync(
-      require('../assets/buzzer.mp3')
-    );
-    setSound(sound);
-    await sound.playAsync();
+    try {
+      console.log('Attempting to play sound...');
+      if (!sound) {
+        console.log('No sound loaded, loading now...');
+        await loadSound();
+      }
+      
+      if (sound) {
+        console.log('Playing sound...');
+        await sound.setPositionAsync(0);
+        const result = await sound.playAsync();
+        console.log('Play result:', result);
+      }
+    } catch (error) {
+      console.error('Error playing sound:', error);
+    }
   };
 
   const isLandscape = dimensions.width > dimensions.height;
   const timerSize = isLandscape ? 
     Math.min(dimensions.width, dimensions.height) * 0.5 : 
     Math.min(dimensions.width, dimensions.height) * 0.35;
+
+  useEffect(() => {
+    loadSound();
+    return () => {
+      if (sound) {
+        console.log('Unloading sound...');
+        sound.unloadAsync();
+      }
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
